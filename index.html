@@ -255,9 +255,11 @@
             Lock: (props) => <IconBase {...props}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconBase>,
             Search: (props) => <IconBase {...props}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></IconBase>,
             Check: (props) => <IconBase {...props}><polyline points="20 6 9 17 4 12" /></IconBase>,
+            Phone: (props) => <IconBase {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconBase>,
+            Clock: (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>,
         };
 
-        const { Users, Trophy, Shield, Menu, X, Video, Target, Flame, Briefcase, MessageSquare, Trash2, Plus, Instagram, Twitter, Lock, Search, Check } = Icons;
+        const { Users, Trophy, Shield, Menu, X, Video, Target, Flame, Briefcase, MessageSquare, Trash2, Plus, Instagram, Twitter, Lock, Search, Check, Phone, Clock } = Icons;
 
         // --- Configuration & Data ---
         const LOGO_URL = "https://i.postimg.cc/G21Qj6CX/Whats-App-Image-2026-01-05-at-12-10-17-PM.jpg";
@@ -590,9 +592,14 @@
             const [showModal, setShowModal] = useState(false);
             const [formData, setFormData] = useState({
                 name: '',
+                contact: '', // Added Contact Field
                 ign: '',
                 role: 'Full Squad',
-                exp: ''
+                exp: '',
+                player2: '',
+                player3: '',
+                player4: '',
+                substitute: ''
             });
 
             const handleChange = (e) => {
@@ -617,10 +624,22 @@
                 // 1. Send data to Google Sheet
                 if (GOOGLE_SCRIPT_URL) {
                     try {
+                        let finalIgn = formData.ign;
+                        // Format IGN based on Role
+                        if (formData.role === 'Full Squad') {
+                            finalIgn = `C: ${formData.ign}, P2: ${formData.player2}, P3: ${formData.player3}, P4: ${formData.player4}`;
+                            if (formData.substitute) {
+                                finalIgn += `, Sub: ${formData.substitute}`;
+                            }
+                        } else if (formData.role === 'Duo') {
+                            finalIgn = `C: ${formData.ign}, P2: ${formData.player2}`;
+                        }
+
                         const data = new FormData();
                         data.append("timestamp", new Date().toISOString());
-                        data.append("name", formData.name);
-                        data.append("ign", formData.ign);
+                        // Append Contact to Name for the sheet so it's saved in existing columns
+                        data.append("name", `${formData.name} | ${formData.contact}`);
+                        data.append("ign", finalIgn);
                         data.append("role", formData.role);
                         data.append("exp", formData.exp);
 
@@ -667,7 +686,22 @@
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-brand-orange uppercase tracking-wider">Captain IGN</label>
+                                            <label className="text-xs font-bold text-brand-orange uppercase tracking-wider">WhatsApp Contact</label>
+                                            <input 
+                                                name="contact"
+                                                value={formData.contact}
+                                                onChange={handleChange}
+                                                type="text" 
+                                                className="w-full bg-brand-black border border-white/10 p-4 text-white focus:border-brand-orange outline-none transition-colors" 
+                                                placeholder="+91 98765 43210" 
+                                                required 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-brand-orange uppercase tracking-wider">Captain IGN (Player 1)</label>
                                             <input 
                                                 name="ign"
                                                 value={formData.ign}
@@ -678,21 +712,99 @@
                                                 required 
                                             />
                                         </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-brand-orange uppercase tracking-wider">Team Type</label>
+                                            <select 
+                                                name="role"
+                                                value={formData.role}
+                                                onChange={handleChange}
+                                                className="w-full bg-brand-black border border-white/10 p-4 text-white focus:border-brand-orange outline-none transition-colors"
+                                            >
+                                                <option>Full Squad</option>
+                                                <option>Duo</option>
+                                                <option>Solo (Looking for Team)</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold text-brand-orange uppercase tracking-wider">Team Type</label>
-                                        <select 
-                                            name="role"
-                                            value={formData.role}
-                                            onChange={handleChange}
-                                            className="w-full bg-brand-black border border-white/10 p-4 text-white focus:border-brand-orange outline-none transition-colors"
-                                        >
-                                            <option>Full Squad</option>
-                                            <option>Duo</option>
-                                            <option>Solo (Looking for Team)</option>
-                                        </select>
-                                    </div>
+
+                                    {/* Dynamic Fields for DUO */}
+                                    {formData.role === 'Duo' && (
+                                        <div className="space-y-6 border-t border-white/10 pt-6 animate-reveal">
+                                            <h4 className="text-brand-orange text-sm font-bold uppercase tracking-wider">Duo Partner</h4>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Player 2 IGN</label>
+                                                <input 
+                                                    name="player2"
+                                                    value={formData.player2}
+                                                    onChange={handleChange}
+                                                    type="text" 
+                                                    className="w-full bg-brand-black border border-white/10 p-4 text-white focus:border-brand-orange outline-none transition-colors" 
+                                                    placeholder="Partner IGN" 
+                                                    required 
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Dynamic Fields for FULL SQUAD */}
+                                    {formData.role === 'Full Squad' && (
+                                        <div className="space-y-6 border-t border-white/10 pt-6 animate-reveal">
+                                            <h4 className="text-brand-orange text-sm font-bold uppercase tracking-wider">Squad Members</h4>
+                                            
+                                            <div className="grid md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Player 2 IGN</label>
+                                                    <input 
+                                                        name="player2"
+                                                        value={formData.player2}
+                                                        onChange={handleChange}
+                                                        type="text" 
+                                                        className="w-full bg-brand-black border border-white/10 p-4 text-white focus:border-brand-orange outline-none transition-colors" 
+                                                        placeholder="Member 2 IGN" 
+                                                        required 
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Player 3 IGN</label>
+                                                    <input 
+                                                        name="player3"
+                                                        value={formData.player3}
+                                                        onChange={handleChange}
+                                                        type="text" 
+                                                        className="w-full bg-brand-black border border-white/10 p-4 text-white focus:border-brand-orange outline-none transition-colors" 
+                                                        placeholder="Member 3 IGN" 
+                                                        required 
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Player 4 IGN</label>
+                                                    <input 
+                                                        name="player4"
+                                                        value={formData.player4}
+                                                        onChange={handleChange}
+                                                        type="text" 
+                                                        className="w-full bg-brand-black border border-white/10 p-4 text-white focus:border-brand-orange outline-none transition-colors" 
+                                                        placeholder="Member 4 IGN" 
+                                                        required 
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Substitute (Optional)</label>
+                                                    <input 
+                                                        name="substitute"
+                                                        value={formData.substitute}
+                                                        onChange={handleChange}
+                                                        type="text" 
+                                                        className="w-full bg-brand-black border border-white/10 p-4 text-white focus:border-brand-orange outline-none transition-colors" 
+                                                        placeholder="Extra Player IGN" 
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-brand-orange uppercase tracking-wider">Past Achievements</label>
@@ -868,6 +980,7 @@
                                                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                                                     <div>
                                                         <h4 className="text-xl font-bold text-white">{req.name}</h4>
+                                                        <p className="text-xs text-gray-500 mb-1">{req.contact}</p>
                                                         <p className="text-sm text-brand-orange font-alt uppercase tracking-wide mb-2">Capt: {req.ign}</p>
                                                         <div className="flex flex-wrap gap-2 text-xs text-gray-400">
                                                             <span className="bg-gray-800 px-2 py-1 rounded">{req.role}</span>
@@ -994,10 +1107,21 @@
             const [requests, setRequests] = useState(INITIAL_REQUESTS);
 
             const handleNewRequest = (formData) => {
+                let finalIgn = formData.ign;
+                if (formData.role === 'Full Squad') {
+                    finalIgn = `C: ${formData.ign}, P2: ${formData.player2}, P3: ${formData.player3}, P4: ${formData.player4}`;
+                    if (formData.substitute) {
+                        finalIgn += `, Sub: ${formData.substitute}`;
+                    }
+                } else if (formData.role === 'Duo') {
+                    finalIgn = `C: ${formData.ign}, P2: ${formData.player2}`;
+                }
+
                 const newReq = {
                     id: Date.now(),
                     name: formData.name,
-                    ign: formData.ign,
+                    contact: formData.contact, // Capture contact
+                    ign: finalIgn,
                     role: formData.role,
                     exp: formData.exp,
                     timestamp: new Date().toISOString()
